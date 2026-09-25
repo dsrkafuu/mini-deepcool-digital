@@ -21,7 +21,7 @@ CH270 DIGITAL 第四块固定显示当前模式的频率。没有 PSU 模式、�
 - **托盘**：Windows Forms `ApplicationContext` 和 `NotifyIcon` 管理生命周期与通知图标；右键菜单通过 Win32 弹出菜单 API 绘制，使用 Windows 系统样式。常驻时没有可见主窗口；诊断窗口按需打开。菜单事件仅更新状态并通知后台工作者，不等待硬件 I/O。
 - **硬件数据**：进程内直接调用 `LibreHardwareMonitorLib`，首版固定 NuGet 稳定版 `0.9.6`。不启动其图形程序，也不依赖 RTSS 运行。用户现有 RTSS Overlay 的 Internal HAL 仅作本机数值对照。
 - **设备通信**：使用 `HidSharp` `2.6.4` 枚举和访问 Windows HID，CH270 报文在本仓库独立编码。报告 ID、长度和写入方式以 CH270 Windows 实机探针为准。
-- **构建**：运行 `dotnet build -c Release`，直接使用 `MiniDeepCoolDigital/bin/Release/net10.0-windows/` 中的产物，不另行执行 `publish` 或打 ZIP。测量整个进程的 CPU 与私有内存，不假定 .NET 必然比官方软件占用更少。
+- **构建与打包**：日常运行 `dotnet build -c Release`，直接使用 `MiniDeepCoolDigital/bin/Release/net10.0-windows/` 中的产物；生产打包运行 `package-release.ps1`，构建 win-x64 Release 并在应用项目的 `bin/` 中生成带版本号的 ZIP。不使用 `dotnet publish`。测量整个进程的 CPU 与私有内存，不假定 .NET 必然比官方软件占用更少。
 
 不再保留 Rust、跨进程传感器辅助程序或两套运行时。
 
@@ -104,7 +104,7 @@ CPU 频率的聚合口径、不同 CPU/GPU 的传感器名称先通过只读探�
 | P0 只读探针 | CPU/GPU 硬件及候选传感器清单，权限、单位、空值和采样耗时 | 八项指标在本机的来源与口径明确，可与 RTSS Internal HAL 对照。 |
 | P1 最小闭环 | .NET 托盘、配置、LibreHardwareMonitorLib、CH270 适配器及三档更新 | CH270 实机显示两种模式的四项；菜单和开关生效；缺失数据时不写入。 |
 | P2 稳定性 | 拔插、睡眠恢复、Explorer 重启、设备占用、诊断和性能测量 | 用户已确认 CH270 断线重连恢复；睡眠唤醒和 Explorer 重启尚未实测。继续记录空闲 CPU、私有内存和启动时间，并与官方软件同机比较。 |
-| P3 Release 构建 | Release 产物、运行依赖说明和设备兼容标记 | `dotnet build -c Release` 与测试通过；只有 CH270 标为维护者实机验证。 |
+| P3 Release 打包 | Release 产物、x64 ZIP、运行依赖说明和设备兼容标记 | `package-release.ps1` 构建并生成带版本号的 ZIP；只有 CH270 标为维护者实机验证。 |
 
 协议编码和传感器选择规则用脱敏样本测试；工作者用假传感器和假设备验证不重叠、切换无旧帧、缺失不写入。HID 报文被接受、页面正确和开关生效必须由 CH270 实机测试证明。其他型号的社区反馈与维护者实测分开记录。
 

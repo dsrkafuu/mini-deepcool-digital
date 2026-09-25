@@ -29,6 +29,8 @@ dotnet build -c Release
 
 程序位于 `MiniDeepCoolDigital/bin/Release/net10.0-windows/`。实现细节见[技术方案](docs/technical-plan.md)。
 
+需要 Windows x64 压缩包时，运行 `./package-release.ps1`。脚本会构建 Release，并按项目版本号在 `MiniDeepCoolDigital/bin/` 生成 `MiniDeepCoolDigital-<版本号>-x64.zip`。
+
 ## 添加新设备
 
 本项目目前只适配并实机验证了 CH270 DIGITAL。添加其他型号时，可以参考 [deepcool-digital-linux 的设备列表](https://github.com/Nortank12/deepcool-digital-linux/blob/main/device-list/README.md)及其[协议映射表](https://github.com/Nortank12/deepcool-digital-linux/tree/main/device-list/tables)，先确认 VID/PID、报文格式和设备支持的显示模式。上游项目用于协议研究，本项目独立实现 Windows 通信，不直接复制其代码。

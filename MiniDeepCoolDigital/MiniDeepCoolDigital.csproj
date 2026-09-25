@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>MiniDeepCoolDigital</AssemblyName>
+    <Version>0.1.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\DeepCool.ico</ApplicationIcon>
   </PropertyGroup>
