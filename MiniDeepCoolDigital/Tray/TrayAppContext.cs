@@ -1,4 +1,3 @@
-using Microsoft.Win32;
 using MiniDeepCoolDigital.Configuration;
 using MiniDeepCoolDigital.Devices;
 using MiniDeepCoolDigital.Display;
@@ -8,9 +7,7 @@ namespace MiniDeepCoolDigital.Tray;
 
 internal sealed class TrayAppContext : ApplicationContext
 {
-  private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-  private const string RunName = "MiniDeepCoolDigital";
-  private readonly Control _dispatcher = new();
+  private readonly Form _dispatcher = new() { ShowInTaskbar = false };
   private readonly NotifyIcon _icon;
   private readonly ContextMenuStrip _menu = new();
   private readonly DisplayWorker _worker;
@@ -30,7 +27,7 @@ internal sealed class TrayAppContext : ApplicationContext
     _ = _dispatcher.Handle;
     _settings = SettingsStore.Load(out var warning);
     _worker = new DisplayWorker(_settings);
-    _worker.StatusChanged += value => Post(() => _status.Text = "状态：" + value);
+    _worker.StatusChanged += value => Post(() => _status.Text = value);
     _worker.ChoicesChanged += (devices, gpus) => Post(() => UpdateChoices(devices, gpus));
 
     _menu.Items.Add(_status);
@@ -67,10 +64,19 @@ internal sealed class TrayAppContext : ApplicationContext
     {
       Icon = SystemIcons.Application,
       Text = "mini-deepcool-digital",
-      ContextMenuStrip = _menu,
       Visible = true
     };
-    if (warning is not null) _status.Text = "状态：" + warning;
+    _icon.MouseUp += (_, e) =>
+    {
+      if (e.Button != MouseButtons.Right) return;
+      try
+      {
+        _startup.Checked = StartupTask.IsEnabled();
+        NativeTrayMenu.Show(_dispatcher.Handle, Cursor.Position, _menu.Items);
+      }
+      catch (Exception error) { _status.Text = "菜单打开失败：" + error.Message; }
+    };
+    if (warning is not null) _status.Text = warning;
     _worker.Start();
     _worker.Rescan();
   }
@@ -130,7 +136,6 @@ internal sealed class TrayAppContext : ApplicationContext
     _display.Checked = _settings.DisplayEnabled;
     _cpu.Checked = _settings.Mode == DisplayMode.Cpu;
     _gpu.Checked = _settings.Mode == DisplayMode.Gpu;
-    _startup.Checked = _settings.StartWithWindows;
     foreach (var (seconds, item) in _intervals) item.Checked = _settings.UpdateSeconds == seconds;
   }
 
@@ -138,11 +143,9 @@ internal sealed class TrayAppContext : ApplicationContext
   {
     try
     {
-      using var key = Registry.CurrentUser.CreateSubKey(RunKey);
-      if (key is null) throw new InvalidOperationException("无法打开当前用户启动项");
-      if (_settings.StartWithWindows) key.DeleteValue(RunName, false);
-      else key.SetValue(RunName, $"\"{Environment.ProcessPath}\"");
-      Change(_settings with { StartWithWindows = !_settings.StartWithWindows });
+      if (StartupTask.IsEnabled()) StartupTask.Disable();
+      else StartupTask.Enable(Environment.ProcessPath ?? throw new InvalidOperationException("无法确定程序路径"));
+      _startup.Checked = StartupTask.IsEnabled();
     }
     catch (Exception error) { MessageBox.Show(_dispatcher, error.Message, "开机启动设置失败"); }
   }
@@ -150,7 +153,7 @@ internal sealed class TrayAppContext : ApplicationContext
   private async Task ShowDiagnosticsAsync()
   {
     var details = await _worker.DescribeAsync();
-    Post(() => MessageBox.Show(_dispatcher, details, "CPU/GPU 传感器诊断"));
+    Post(() => MessageBox.Show(_dispatcher, details, "传感器诊断"));
   }
 
   private async void ExitAsync()

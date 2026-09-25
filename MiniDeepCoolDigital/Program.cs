@@ -13,7 +13,7 @@ internal static class Program
     try { Application.Run(new TrayAppContext()); }
     catch (Exception error)
     {
-      MessageBox.Show($"启动失败：{error}", "mini-deepcool-digital", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      MessageBox.Show($"启动失败：{error.Message}", "mini-deepcool-digital", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
   }
 }

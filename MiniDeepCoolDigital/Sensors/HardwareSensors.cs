@@ -69,13 +69,13 @@ internal sealed class HardwareSensors : IDisposable
     Open();
     var lines = new List<string>
     {
-      PawnIo.IsInstalled ? $"PawnIO: 已安装 {PawnIo.Version}" : "PawnIO: 未安装（CPU 底层传感器可能不可用）",
-      IsElevated() ? "进程权限: 管理员" : "进程权限: 普通用户（可能无法访问 PawnIO）"
+      PawnIo.IsInstalled ? $"PawnIO：已安装 {PawnIo.Version}" : "PawnIO：未安装",
+      IsElevated() ? "权限：管理员" : "权限：普通用户"
     };
     foreach (var hardware in _computer.Hardware.Where(h => h.HardwareType == HardwareType.Cpu || IsGpu(h)))
     {
       UpdateTree(hardware);
-      lines.Add($"{hardware.HardwareType}: {hardware.Name} ({hardware.Identifier})");
+      lines.Add($"{hardware.HardwareType}：{hardware.Name} · {hardware.Identifier}");
       foreach (var sensor in EnumerateSensors(hardware))
         lines.Add($"  {sensor.SensorType}: {sensor.Name} = {sensor.Value?.ToString("0.##") ?? "不可用"}");
     }
@@ -84,8 +84,8 @@ internal sealed class HardwareSensors : IDisposable
 
   private static string? CpuAccessHint()
   {
-    if (!PawnIo.IsInstalled) return "系统未安装 PawnIO，CPU 底层传感器可能无法读取";
-    if (!IsElevated()) return "PawnIO 已安装，但当前进程未以管理员权限运行，可能无法访问 CPU 底层传感器";
+    if (!PawnIo.IsInstalled) return "未安装 PawnIO";
+    if (!IsElevated()) return "需要管理员权限";
     return null;
   }
 
@@ -138,7 +138,7 @@ internal sealed class HardwareSensors : IDisposable
         string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
       if (sensor?.Value is float value && (type == SensorType.Load || value > 0)) return value;
     }
-    throw new InvalidOperationException($"{label}传感器缺失或数值不可用（候选：{string.Join("/", names)}）");
+    throw new InvalidOperationException($"{label}不可用");
   }
 
   private static float CpuClock(ISensor[] sensors)

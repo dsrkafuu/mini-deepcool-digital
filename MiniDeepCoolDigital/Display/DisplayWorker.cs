@@ -81,13 +81,13 @@ internal sealed class DisplayWorker
           openedPath = null;
         }
 
-        if (selected is null) Publish("未发现 CH270 DIGITAL（或所选设备已断开）");
+        if (selected is null) Publish("未找到 CH270 DIGITAL");
         else if (!_settings.DisplayEnabled)
         {
           device?.Dispose();
           device = null;
           openedPath = null;
-          Publish("已暂停更新（硬件熄屏命令待实机验证）");
+          Publish("已暂停更新");
         }
         else
         {
