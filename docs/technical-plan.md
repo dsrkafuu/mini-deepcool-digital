@@ -1,6 +1,6 @@
 # mini-deepcool-digital 技术方案
 
-> 2026-09-25 重新制定。目标平台：Windows 10/11 x64；首个实测设备：CH270 DIGITAL。本方案描述待实现的 .NET 版本，不代表已经通过实机验证。
+> 2026-09-25 重新制定。目标平台：Windows 10/11 x64；首个实测设备：CH270 DIGITAL。基础实现与实机验证范围见 [update-260925.md](update-260925.md)。
 
 ## 1. 目标与范围
 
@@ -27,17 +27,22 @@ CH270 DIGITAL 第四块固定显示当前模式的频率。没有 PSU 模式、�
 
 ## 3. 代码结构与工作者
 
-先建立一个应用项目和一个测试项目，避免提前拆成多个程序集：
+应用项目和测试项目分别放在根目录下的同级文件夹。根目录保留解决方案、SDK 配置、文档等通用文件；测试使用 MSTest，由 `dotnet test` 运行：
 
 ```text
-src/MiniDeepCoolDigital/
-  App/             启动、单实例、生命周期、状态
-  Tray/            菜单与 UI 线程调度
-  Configuration/   当前用户配置与保存
-  Sensors/         LibreHardwareMonitor 初始化、采样和映射
-  Devices/         HID 枚举、CH270 协议与连接
-  Display/         CPU/GPU 通用样本、校验、定时工作者
-tests/MiniDeepCoolDigital.Tests/
+MiniDeepCoolDigital.slnx
+global.json
+docs/
+MiniDeepCoolDigital/
+  MiniDeepCoolDigital.csproj
+  Program.cs          启动与单实例
+  Tray/               菜单与 UI 线程调度
+  Configuration/      当前用户配置与保存
+  Sensors/            LibreHardwareMonitor 初始化、采样和映射
+  Devices/            HID 枚举、CH270 协议与连接
+  Display/            CPU/GPU 通用样本、校验、定时工作者
+MiniDeepCoolDigital.Tests/
+  MiniDeepCoolDigital.Tests.csproj
 ```
 
 核心边界为 `ISensorProvider.Read(DisplayMode)` 和 `IDisplayDevice.Write(DisplaySample)`。设备适配器只处理设备识别及 CPU/GPU 四项的编码写入，不增加设备专属菜单层或第四块策略。样本保存模式、四个数值、采样时间和传感器标识；必需项缺失、过期、非有限数或越界时整帧不可写入，不能补零。
@@ -109,4 +114,5 @@ CPU 频率的聚合口径、不同 CPU/GPU 的传感器名称先通过只读探�
 - [LibreHardwareMonitor 项目与集成示例](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
 - [LibreHardwareMonitorLib 0.9.6](https://www.nuget.org/packages/LibreHardwareMonitorLib/0.9.6)
 - [HidSharp 2.6.4](https://www.nuget.org/packages/HidSharp/2.6.4)
+- [MSTest 与 dotnet test](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-mstest-running-tests)
 - [deepcool-digital-linux](https://github.com/Nortank12/deepcool-digital-linux)

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MiniDeepCoolDigital/MiniDeepCoolDigital.csproj" />
+  <Project Path="MiniDeepCoolDigital.Tests/MiniDeepCoolDigital.Tests.csproj" />
+</Solution>
