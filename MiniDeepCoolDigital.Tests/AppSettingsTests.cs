@@ -10,14 +10,15 @@ public sealed class AppSettingsTests
   [TestMethod]
   public void Validated_ResetsUnsupportedUpdateInterval()
   {
-    Assert.AreEqual(5, new AppSettings().UpdateSeconds);
-    Assert.AreEqual(5, new AppSettings { UpdateSeconds = 7 }.Validated().UpdateSeconds);
+    Assert.AreEqual(1, new AppSettings().UpdateSeconds);
+    Assert.AreEqual(1, new AppSettings { UpdateSeconds = 7 }.Validated().UpdateSeconds);
+    Assert.AreEqual(1, new AppSettings { UpdateSeconds = 10 }.Validated().UpdateSeconds);
   }
 
   [TestMethod]
   public void Validated_KeepsSupportedUpdateIntervals()
   {
-    foreach (var seconds in new[] { 1, 3, 5, 10 })
+    foreach (var seconds in new[] { 1, 3, 5 })
       Assert.AreEqual(seconds, new AppSettings { UpdateSeconds = seconds }.Validated().UpdateSeconds);
   }
 

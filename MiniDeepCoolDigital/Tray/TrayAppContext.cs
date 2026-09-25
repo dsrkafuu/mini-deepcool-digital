@@ -48,7 +48,7 @@ internal sealed class TrayAppContext : ApplicationContext
     _menu.Items.Add(modes);
 
     var frequencies = new ToolStripMenuItem("更新频率");
-    foreach (var seconds in new[] { 1, 3, 5, 10 })
+    foreach (var seconds in new[] { 1, 3, 5 })
     {
       var item = new ToolStripMenuItem($"{seconds} 秒");
       item.Click += (_, _) => Change(_settings with { UpdateSeconds = seconds });

@@ -7,7 +7,7 @@ namespace MiniDeepCoolDigital.Configuration;
 internal sealed record AppSettings
 {
   public DisplayMode Mode { get; init; } = DisplayMode.Cpu;
-  public int UpdateSeconds { get; init; } = 5;
+  public int UpdateSeconds { get; init; } = 1;
   public bool DisplayEnabled { get; init; } = true;
   public string? DevicePath { get; init; }
   public string? GpuIdentifier { get; init; }
@@ -15,7 +15,7 @@ internal sealed record AppSettings
   public AppSettings Validated() => this with
   {
     Mode = Enum.IsDefined(Mode) ? Mode : DisplayMode.Cpu,
-    UpdateSeconds = UpdateSeconds is 1 or 3 or 5 or 10 ? UpdateSeconds : 5
+    UpdateSeconds = UpdateSeconds is 1 or 3 or 5 ? UpdateSeconds : 1
   };
 }
 
