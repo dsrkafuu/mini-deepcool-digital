@@ -28,3 +28,11 @@ dotnet build -c Release
 ```
 
 程序位于 `MiniDeepCoolDigital/bin/Release/net10.0-windows/`。实现细节见[技术方案](docs/technical-plan.md)。
+
+## 添加新设备
+
+本项目目前只适配并实机验证了 CH270 DIGITAL。添加其他型号时，可以参考 [deepcool-digital-linux 的设备列表](https://github.com/Nortank12/deepcool-digital-linux/blob/main/device-list/README.md)及其[协议映射表](https://github.com/Nortank12/deepcool-digital-linux/tree/main/device-list/tables)，先确认 VID/PID、报文格式和设备支持的显示模式。上游项目用于协议研究，本项目独立实现 Windows 通信，不直接复制其代码。
+
+1. 参考 `MiniDeepCoolDigital/Devices/Ch270Device.cs` 和 `Ch270Protocol.cs`，为新设备实现识别、连接和报文编码；不要仅凭相同品牌或系列复用 CH270 报文。
+2. 在 `MiniDeepCoolDigital/Display/DisplayWorker.cs` 中接入新设备的枚举与写入，并让托盘设备菜单显示正确型号。只有设备确实支持的模式才应发送。
+3. 在 `MiniDeepCoolDigital.Tests/` 加入报文字段与校验测试，再用真实设备确认显示内容、模式切换和断线重连。未经实机验证的型号应明确标为“未实机验证”。
