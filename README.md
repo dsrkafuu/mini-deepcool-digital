@@ -2,6 +2,8 @@
 
 面向 Windows 的 CH270 DIGITAL 托盘数显程序。目前提供 CPU、GPU 两种显示模式，均显示温度、功耗、使用率、频率；采样与设备更新频率可选 1、3、5、10 秒，默认 5 秒。
 
+程序图标提取自本机安装的九州风神软件，生成包含 16–256 像素帧的 ICO，供 EXE、Windows 快捷方式和托盘使用。
+
 ## 运行依赖
 
 - Windows 10/11 与 .NET 10 Windows Desktop Runtime。
@@ -24,6 +26,10 @@ dotnet run --project MiniDeepCoolDigital/MiniDeepCoolDigital.csproj
 
 运行命令请在管理员终端执行，或直接以管理员身份启动构建产物；应用清单会在直接启动时请求提权。
 
-根目录的 `MiniDeepCoolDigital.slnx` 包含应用与 MSTest 测试项目。技术细节和当前验证范围见[技术方案](docs/technical-plan.md)及[实现记录](docs/update-260925.md)。
+根目录的 `MiniDeepCoolDigital.slnx` 包含应用与 MSTest 测试项目。技术细节和当前验证范围见[技术方案](docs/technical-plan.md)及[已归档的实现记录](docs/archive/update-260925.md)。
+
+## Release 构建
+
+从仓库根目录运行 `dotnet build -c Release`。构建产物位于 `MiniDeepCoolDigital/bin/Release/net10.0-windows/`，运行其中的 `MiniDeepCoolDigital.exe`。程序仍需 .NET 10 Windows Desktop Runtime 与 PawnIO；CPU 传感器需要管理员权限。首次启动默认每 5 秒更新，已有配置沿用原值。目前仅 CH270 DIGITAL 经过维护者实机验证。
 
 协议资料参考 [deepcool-digital-linux](https://github.com/Nortank12/deepcool-digital-linux)；本仓库独立实现 Windows 版本，没有复制上游源码。

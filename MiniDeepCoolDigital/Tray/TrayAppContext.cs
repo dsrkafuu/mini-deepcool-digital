@@ -9,6 +9,7 @@ internal sealed class TrayAppContext : ApplicationContext
 {
   private readonly Form _dispatcher = new() { ShowInTaskbar = false };
   private readonly NotifyIcon _icon;
+  private readonly Icon _trayIcon;
   private readonly ContextMenuStrip _menu = new();
   private readonly DisplayWorker _worker;
   private readonly ToolStripMenuItem _status = new("正在初始化…") { Enabled = false };
@@ -19,6 +20,8 @@ internal sealed class TrayAppContext : ApplicationContext
   private readonly ToolStripMenuItem _gpu = new("GPU");
   private readonly ToolStripMenuItem _startup = new("开机启动");
   private readonly Dictionary<int, ToolStripMenuItem> _intervals = [];
+  private IReadOnlyList<DeviceChoice>? _shownDevices;
+  private IReadOnlyList<GpuChoice>? _shownGpus;
   private AppSettings _settings;
   private bool _exiting;
 
@@ -60,9 +63,10 @@ internal sealed class TrayAppContext : ApplicationContext
     _menu.Items.Add(new ToolStripMenuItem("退出", null, (_, _) => ExitAsync()));
     SyncChecks();
 
+    _trayIcon = LoadTrayIcon();
     _icon = new NotifyIcon
     {
-      Icon = SystemIcons.Application,
+      Icon = _trayIcon,
       Text = "mini-deepcool-digital",
       Visible = true
     };
@@ -83,7 +87,21 @@ internal sealed class TrayAppContext : ApplicationContext
 
   private void UpdateChoices(IReadOnlyList<DeviceChoice> devices, IReadOnlyList<GpuChoice> gpus)
   {
-    _devices.DropDownItems.Clear();
+    if (_shownDevices is null || !_shownDevices.SequenceEqual(devices))
+    {
+      _shownDevices = devices.ToArray();
+      RebuildDeviceChoices(devices);
+    }
+    if (_shownGpus is null || !_shownGpus.SequenceEqual(gpus))
+    {
+      _shownGpus = gpus.ToArray();
+      RebuildGpuChoices(gpus);
+    }
+  }
+
+  private void RebuildDeviceChoices(IReadOnlyList<DeviceChoice> devices)
+  {
+    ClearChoices(_devices);
     var automatic = new ToolStripMenuItem("自动选择") { Checked = _settings.DevicePath is null };
     automatic.Click += (_, _) => Change(_settings with { DevicePath = null });
     _devices.DropDownItems.Add(automatic);
@@ -100,8 +118,11 @@ internal sealed class TrayAppContext : ApplicationContext
     }
     _devices.DropDownItems.Add(new ToolStripSeparator());
     _devices.DropDownItems.Add(new ToolStripMenuItem("重新扫描", null, (_, _) => _worker.Rescan()));
+  }
 
-    _gpus.DropDownItems.Clear();
+  private void RebuildGpuChoices(IReadOnlyList<GpuChoice> gpus)
+  {
+    ClearChoices(_gpus);
     var autoGpu = new ToolStripMenuItem("自动选择") { Checked = _settings.GpuIdentifier is null };
     autoGpu.Click += (_, _) => Change(_settings with { GpuIdentifier = null });
     _gpus.DropDownItems.Add(autoGpu);
@@ -115,6 +136,13 @@ internal sealed class TrayAppContext : ApplicationContext
       item.Click += (_, _) => Change(_settings with { GpuIdentifier = gpu.Identifier });
       _gpus.DropDownItems.Add(item);
     }
+  }
+
+  private static void ClearChoices(ToolStripMenuItem menu)
+  {
+    var oldItems = menu.DropDownItems.Cast<ToolStripItem>().ToArray();
+    menu.DropDownItems.Clear();
+    foreach (var item in oldItems) item.Dispose();
   }
 
   private void Change(AppSettings settings)
@@ -137,6 +165,13 @@ internal sealed class TrayAppContext : ApplicationContext
     _cpu.Checked = _settings.Mode == DisplayMode.Cpu;
     _gpu.Checked = _settings.Mode == DisplayMode.Gpu;
     foreach (var (seconds, item) in _intervals) item.Checked = _settings.UpdateSeconds == seconds;
+  }
+
+  private static Icon LoadTrayIcon()
+  {
+    using var resource = typeof(TrayAppContext).Assembly.GetManifestResourceStream("MiniDeepCoolDigital.Assets.DeepCool.ico")
+      ?? throw new InvalidOperationException("缺少托盘图标资源");
+    return new Icon(resource, SystemInformation.SmallIconSize);
   }
 
   private void ToggleStartup()
@@ -165,6 +200,7 @@ internal sealed class TrayAppContext : ApplicationContext
     finally
     {
       _icon.Dispose();
+      _trayIcon.Dispose();
       _menu.Dispose();
       _dispatcher.Dispose();
       ExitThread();

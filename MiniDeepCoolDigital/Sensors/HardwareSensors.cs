@@ -120,6 +120,9 @@ internal sealed class HardwareSensors : IDisposable
   private static void UpdateTree(IHardware hardware)
   {
     hardware.Update();
+    foreach (var sensor in hardware.Sensors)
+      if (sensor.ValuesTimeWindow != TimeSpan.Zero)
+        sensor.ValuesTimeWindow = TimeSpan.Zero;
     foreach (var child in hardware.SubHardware) UpdateTree(child);
   }
 
