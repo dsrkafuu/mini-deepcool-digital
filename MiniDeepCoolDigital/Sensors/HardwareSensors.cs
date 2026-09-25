@@ -1,5 +1,7 @@
 using LibreHardwareMonitor.Hardware;
+using LibreHardwareMonitor.PawnIo;
 using MiniDeepCoolDigital.Display;
+using System.Security.Principal;
 
 namespace MiniDeepCoolDigital.Sensors;
 
@@ -38,11 +40,22 @@ internal sealed class HardwareSensors : IDisposable
       .ToArray();
 
     if (mode == DisplayMode.Cpu)
-      return new DisplaySample(mode,
-        Require(sensors, SensorType.Temperature, "CPU 温度", "CPU Package", "CPU (Tctl/Tdie)", "Core (Tctl/Tdie)"),
-        Require(sensors, SensorType.Power, "CPU 功耗", "CPU Package", "Package"),
-        Require(sensors, SensorType.Load, "CPU 使用率", "CPU Total"),
-        CpuClock(sensors));
+    {
+      try
+      {
+        return new DisplaySample(mode,
+          Require(sensors, SensorType.Temperature, "CPU 温度", "CPU Package", "CPU (Tctl/Tdie)", "Core (Tctl/Tdie)"),
+          Require(sensors, SensorType.Power, "CPU 功耗", "CPU Package", "Package"),
+          Require(sensors, SensorType.Load, "CPU 使用率", "CPU Total"),
+          CpuClock(sensors));
+      }
+      catch (InvalidOperationException error)
+      {
+        var hint = CpuAccessHint();
+        if (hint is null) throw;
+        throw new InvalidOperationException($"{error.Message}；{hint}", error);
+      }
+    }
 
     return new DisplaySample(mode,
       Require(sensors, SensorType.Temperature, "GPU 温度", "GPU Core", "GPU Temperature"),
@@ -54,7 +67,11 @@ internal sealed class HardwareSensors : IDisposable
   public string Describe()
   {
     Open();
-    var lines = new List<string>();
+    var lines = new List<string>
+    {
+      PawnIo.IsInstalled ? $"PawnIO: 已安装 {PawnIo.Version}" : "PawnIO: 未安装（CPU 底层传感器可能不可用）",
+      IsElevated() ? "进程权限: 管理员" : "进程权限: 普通用户（可能无法访问 PawnIO）"
+    };
     foreach (var hardware in _computer.Hardware.Where(h => h.HardwareType == HardwareType.Cpu || IsGpu(h)))
     {
       UpdateTree(hardware);
@@ -62,7 +79,20 @@ internal sealed class HardwareSensors : IDisposable
       foreach (var sensor in EnumerateSensors(hardware))
         lines.Add($"  {sensor.SensorType}: {sensor.Name} = {sensor.Value?.ToString("0.##") ?? "不可用"}");
     }
-    return lines.Count == 0 ? "未发现 CPU/GPU 传感器" : string.Join(Environment.NewLine, lines);
+    return string.Join(Environment.NewLine, lines);
+  }
+
+  private static string? CpuAccessHint()
+  {
+    if (!PawnIo.IsInstalled) return "系统未安装 PawnIO，CPU 底层传感器可能无法读取";
+    if (!IsElevated()) return "PawnIO 已安装，但当前进程未以管理员权限运行，可能无法访问 CPU 底层传感器";
+    return null;
+  }
+
+  private static bool IsElevated()
+  {
+    using var identity = WindowsIdentity.GetCurrent();
+    return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
   }
 
   private IHardware? SelectGpu(string? identifier)
