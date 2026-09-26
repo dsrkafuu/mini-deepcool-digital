@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Principal;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Win32;
 
@@ -33,7 +34,7 @@ internal static class StartupTask
     var temporary = Path.Combine(Path.GetTempPath(), $"MiniDeepCoolDigital-{Guid.NewGuid():N}.xml");
     try
     {
-      File.WriteAllText(temporary, BuildXml(path, userId).ToString(), new UTF8Encoding(false));
+      WriteXml(temporary, BuildXml(path, userId));
       RunRequired("/Create", "/TN", Name, "/XML", temporary, "/F");
       RemoveLegacyRunEntry();
     }
@@ -53,10 +54,10 @@ internal static class StartupTask
   internal static XDocument BuildXml(string executablePath, string userId)
   {
     var path = Path.GetFullPath(executablePath);
-    return new XDocument(new XElement(TaskNamespace + "Task",
+    return new XDocument(new XDeclaration("1.0", "utf-16", null), new XElement(TaskNamespace + "Task",
       new XAttribute("version", "1.2"),
       new XElement(TaskNamespace + "RegistrationInfo",
-        new XElement(TaskNamespace + "Description", "启动 mini-deepcool-digital 托盘数显")),
+        new XElement(TaskNamespace + "Description", "自动启动 MiniDeepCoolDigital 托盘数显软件。")),
       new XElement(TaskNamespace + "Triggers",
         new XElement(TaskNamespace + "LogonTrigger",
           new XElement(TaskNamespace + "Enabled", true),
@@ -77,6 +78,16 @@ internal static class StartupTask
         new XElement(TaskNamespace + "Exec",
           new XElement(TaskNamespace + "Command", path),
           new XElement(TaskNamespace + "WorkingDirectory", Path.GetDirectoryName(path))))));
+  }
+
+  internal static void WriteXml(string filePath, XDocument task)
+  {
+    using var writer = XmlWriter.Create(filePath, new XmlWriterSettings
+    {
+      Encoding = new UnicodeEncoding(false, true),
+      Indent = true
+    });
+    task.Save(writer);
   }
 
   private static void RequireAdministrator()

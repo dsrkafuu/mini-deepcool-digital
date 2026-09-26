@@ -21,4 +21,29 @@ public sealed class StartupTaskTests
     Assert.AreEqual("PT0S", task.Descendants(ns + "ExecutionTimeLimit").Single().Value);
     Assert.AreEqual(Path.GetFullPath(executable), task.Descendants(ns + "Command").Single().Value);
   }
+
+  [TestMethod]
+  public void TaskXmlUsesUtf16AndPreservesChineseDescription()
+  {
+    var filePath = Path.Combine(Path.GetTempPath(), $"MiniDeepCoolDigital-{Guid.NewGuid():N}.xml");
+    try
+    {
+      StartupTask.WriteXml(filePath, StartupTask.BuildXml(@"C:\MiniDeepCoolDigital.exe", "S-1-5-21-123"));
+
+      var bytes = File.ReadAllBytes(filePath);
+      Assert.IsTrue(bytes.Length >= 2);
+      Assert.AreEqual(0xFF, bytes[0]);
+      Assert.AreEqual(0xFE, bytes[1]);
+
+      var xml = File.ReadAllText(filePath);
+      StringAssert.Contains(xml, "encoding=\"utf-16\"");
+      var ns = (XNamespace)"http://schemas.microsoft.com/windows/2004/02/mit/task";
+      Assert.AreEqual("自动启动 MiniDeepCoolDigital 托盘数显软件。",
+        XDocument.Load(filePath).Descendants(ns + "Description").Single().Value);
+    }
+    finally
+    {
+      if (File.Exists(filePath)) File.Delete(filePath);
+    }
+  }
 }
